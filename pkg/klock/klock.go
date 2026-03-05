@@ -19,7 +19,9 @@ package klock
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -75,7 +77,24 @@ func (o Options) Validate() error {
 	}
 }
 
+func parseArgs(args []string) error {
+	if len(args) != 1 {
+		return errors.New("fatal: only one resource kind can be watched at a time")
+	}
+
+	if matched, _ := regexp.Match("^[a-z]+$", []byte(args[0])); !matched {
+		return errors.New("fatal: only one resource kind can be watched at a time")
+	}
+
+	return nil
+}
+
 func Execute(o Options, args []string) error {
+	err := parseArgs(args)
+	if err != nil {
+		return err
+	}
+
 	if err := o.Validate(); err != nil {
 		return err
 	}
@@ -156,7 +175,7 @@ func Execute(o Options, args []string) error {
 		w.WatchLoop(ctx, restartChan)
 	}()
 
-	_, err := p.Run()
+	_, err = p.Run()
 	return err
 }
 
